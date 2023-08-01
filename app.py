@@ -139,7 +139,7 @@ def updateFieldsToDb():
     ofertaFeatures = featureFields(featureOfertasInmobiliarias)
     
     def getCodigos(ar):
-            return ar['attributes']['codigo']
+            return ar['attributes']['pk_constru']
         
     unidadCodigos=list(map(getCodigos,UnidadConstruccionFeatures))
     
@@ -155,7 +155,7 @@ def updateFieldsToDb():
         for i in ofertaFeatures:
             
             item= (i['attributes'])
-            selectPredioId ="select actpredioid from public.act_predio where actpredionumpred = '{}'".format(item['codigo'])
+            selectPredioId ="select actpredioid from public.act_predio where actpredionumpred = '{}'".format(item['codigo_terreno'])
             cur.execute(selectPredioId)
             try:
                 predio_id=cur.fetchone()[0]
@@ -177,13 +177,10 @@ def updateFieldsToDb():
                 actofertasmerinmusucre= item['last_edited_user'] if item['last_edited_user'] != None else ''
                 
                 insertOferta = "INSERT INTO public.act_ofertasmerinm (actpredioid,acttipoofertaid,actvalorpedido,actvalornegociado,actofertafeccaptura,acttiemofeenmer,actnumconofe,actnombreofe,actofertasmerinmipmod,actofertasmerinmfechmod,actofertasmerinmusumod,actofertasmerinmipcre,actofertasmerinmfechcre,actofertasmerinmusucre) VALUES ({},{},{},{},'{}','{}','{}','{}','{}','{}','{}','{}','{}','{}');".format(predio_id,acttipoofertaid,actvalorpedido,actvalornegociado,actofertafeccaptura,acttiemofeenmer,actnumconofe,actnombreofe,actofertasmerinmipmod,actofertasmerinmfechmod,actofertasmerinmusumod,actofertasmerinmipcre,actofertasmerinmfechcre,actofertasmerinmusucre)
-                try:
-                    cur.execute(insertOferta)
-                    conn.commit()
-                except:
-                    app.logger.warning("No se inserto en la tabla act_ofertasmerinm, el registro: {}".format(insertOferta))
-                
+                cur.execute(insertOferta)
+                conn.commit()
             except:
+                app.logger.warning("No se inserto en la tabla act_ofertasmerinm, el registro: {}".format(insertOferta))
                 pass
             
             
@@ -349,7 +346,7 @@ def updateFieldsToDb():
                             actconaltura	=   v['attributes']['act_altura'] if v['attributes']['act_altura'] != "null"  and v['attributes']['act_altura']!= None else 0
                             actconobservaciones		=	v['attributes']['act_observaciones'][0:100].replace("'","") if v['attributes']['act_observaciones']  != "null" and  v['attributes']['act_observaciones']  != None else "Sin observaciones"
                             actareadigitalconstruccion=v['attributes']['SHAPE__Area'] if v['attributes']['SHAPE__Area'] != "null"  and v['attributes']['SHAPE__Area']!= None   else 0
-                            act_pkconstruccion = '{}'.format(v['attributes']['codigo']) if v['attributes']['codigo'] != "null"  and v['attributes']['codigo']!= None  else 0
+                            act_pkconstruccion = '{}'.format(v['attributes']['pk_constru']) if v['attributes']['pk_constru'] != "null"  and v['attributes']['pk_constru']!= None  else 0
                             codigo = v['attributes']['codigo']
                             actconstruccionipmod = v['attributes']['last_edited_user'] if v['attributes']['last_edited_user'] != "null" and v['attributes']['last_edited_user']!= None   else 0
                             actconstruccionfechmod = datetime.fromtimestamp((v['attributes']['last_edited_date'])/1000) if v['attributes']['last_edited_date'] != "null"  and v['attributes']['last_edited_date'] != None  else 0
@@ -398,7 +395,7 @@ def updateFieldsToDb():
         controlCount=0
         for i in UnidadConstruccionFeatures:
            # print(i)
-            pkc = i['attributes']['codigo']
+            pkc = i['attributes']['pk_constru']
 
 
             if pkc:
@@ -510,7 +507,7 @@ def updateFieldsToDb():
                     usoResideincial=i['attributes']['act_uso_construccin_residencial']  
                     usoComercial=i['attributes']['act_uso_construccion_comercial']
                     usoAnexo=i['attributes']['act_uso_construccion_anexo']
-                    usoIndustrial=i['attributes']['act_uso_construccin_industrial']
+                    usoIndustrial=i['attributes']['act_uso_construccion_industrial']
                     usoInstitucional=i['attributes']['act_uso_cons_institucional']
                 
                     if usoResideincial != None and usoAnexo ==None and usoIndustrial ==None and usoInstitucional==None and usoComercial ==None:
@@ -569,11 +566,12 @@ def updateFieldsToDb():
                             try:
                                 usoitfcode = response[0][0]
                                 unidadUpdate = "UPDATE public.act_unidadconstruccion	SET usoid={}	WHERE actunidadcontruccionid={};".format(usoitfcode,actunidadcontruccionid)
-                                cur.execute(unidadUpdate)
+                                try:
+                                    cur.execute(unidadUpdate)
+                                except:
+                                    app.logger.warning("Registro de unidad con sentencia: {} no agregado ".format(unidadUpdate))
                             except:
-                                app.logger.warning("Registro de unidad con sentencia: {} no agregado ".format(unidadUpdate))
                                 pass
-                    
                     
                         
                     
