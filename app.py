@@ -1,4 +1,6 @@
 # main.py
+#Importación de las librerias necesarias para el funcionamiento del código
+
 from flask import Flask, request
 import requests
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -14,7 +16,7 @@ import logging
 
 
 
-
+#Encabezado de flask 
 load_dotenv()
 
 
@@ -27,7 +29,7 @@ app = Flask(__name__)
 
 logging.basicConfig(filename='record.log', level=logging.INFO, format=f'%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s')
  
- 
+ #Ruta por defecto para testear la API corriendo en un puerto 
 @app.route('/basic_api/hello_world')
 def hello_world():
     return 'Hello, World!'
@@ -38,9 +40,11 @@ if __name__ == '__main__':
 
 
 
-# database connection
+# Conexión con la base de datos 
+#verificacion en consola del entorno al cual se esta conectado
 
 print(os.getenv("dbhost"))
+#Conexión con la base de datos del entorno establecido en el archivo .env con las credenciales y rutas de las bases de datos y features
 def get_db_connection():
     conn = psycopg2.connect(host=os.getenv("dbhost"),
                             database=os.getenv("database"),
@@ -52,7 +56,7 @@ def get_db_connection():
 RegularDate = datetime.today() - timedelta(hours=3, minutes=0)
 RegularDate = RegularDate.strftime("%m/%d/%Y")
 
-
+#Asignación de las variables del entorno (Inicializadas en el archivo .env)
 tokenUrl = os.getenv("tokenUrl")
 featureTerrenoQueryUrl = os.getenv("featureTerrenoQueryUrl")
 featureOfertasQuertyUrl = os.getenv("featureOfertasQuertyUrl")
@@ -60,7 +64,7 @@ featureConstruccionesQueryUrl = os.getenv("featureConstruccionesQueryUrl")
 featureUnidadConstruccionQueryUrl = os.getenv(
     "featureUnidadConstruccionQueryUrl")
 featureOfertasInmobiliarias = os.getenv("featureOfertasInmobiliarias")
-
+#Construccion del payLoad o request a la api de esri para la generación del token
 tokenPayload = {
     "username":  os.getenv("portalUsername"),
     "password": os.getenv("portalpassword"),
@@ -68,7 +72,7 @@ tokenPayload = {
     "referer": 'featureQueryUrl',
     "expiration": 60,
     "f": "json"}
-
+#Generación del PayLoad o request del metodo query a la api del servicio de los features 
 terrenoQueryPayload = {"where": "1=1",
                            "geometryType": "esriGeometryEnvelope",
                            "spatialRel": "esriSpatialRelIntersects",
@@ -85,6 +89,8 @@ terrenoQueryPayload = {"where": "1=1",
                            "sqlFormat": "none",
                            "f": "json",
                            "token": 'Token'}
+
+#Funcion que retorna los features en alojados en el servidor de esri a partir de los urls presentes en .env
 
 def featureFields(QuertyUrl,where='1=1'):
         ftokenPayload = copy.copy(tokenPayload)
@@ -104,9 +110,9 @@ def featureFields(QuertyUrl,where='1=1'):
         Features =  response_json['features'] if response_json['features'] else []
         return Features
 
-
+#Funcion de actualización de las bases de datos 
 def updateFieldsToDb():
-    
+    #funcion inicial para limpiar las tables y restablecer los contadores de los indentificadores automáticos
     def cleanTables():
         cur.execute('delete from act_tipologiaconstruccion')
         cur.execute('delete from act_linderos')
@@ -137,7 +143,7 @@ def updateFieldsToDb():
     ConstruccionFeatures =featureFields(featureConstruccionesQueryUrl)
     UnidadConstruccionFeatures = featureFields(featureUnidadConstruccionQueryUrl)
     ofertaFeatures = featureFields(featureOfertasInmobiliarias)
-    
+    #Funcion (C) para obtener todos los códigos de construcción 
     def getCodigos(ar):
             return ar['attributes']['pk_constru']
         
